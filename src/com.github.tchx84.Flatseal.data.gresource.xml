@@ -18,6 +18,7 @@
     <file>widgets/permissionSwitchRow.ui</file>
     <file>widgets/relativePathRow.ui</file>
     <file alias="shortcuts-dialog.ui">widgets/shortcutsWindow.ui</file>
+    <file>widgets/usbRow.ui</file>
     <file>widgets/variableRow.ui</file>
     <file>widgets/window.ui</file>
   </gresource>

@@ -12,6 +12,7 @@
 	- [Environment](#environment)
 	- [System Bus](#system-bus)
 	- [Session Bus](#system-bus)
+	- [USB](#usb)
 	- [Portals](#portals)
 - [Tips and Tricks](#tips-and-tricks)
 	- [Manually reset Flatseal permissions](#manually-reset-flatseal-permissions)
@@ -112,6 +113,13 @@ Name | Type | Description | `flatpak override` equivalent
 --- | --- | --- | ---
 Talks | Input | Allow the application to talk to session services. <br /> <br /> For example, adding `org.freedesktop.Notifications` will allow the application to send notifications. | `--talk-name=[NAME]`
 Owns | Input | Allow the application to own session services under the given name. | `--own-name=[NAME]`
+
+### USB
+
+Name | Type | Description | `flatpak override` equivalent
+--- | --- | --- | ---
+Allowed devices | Input | Allow the application to access specific USB devices through the portal. <br /> <br /> Devices are identified by vendor id, device id, and/or class, e.g. `vnd:0123` matches all devices from vendor `0123`, and `all` matches every USB device. | `--usb=[QUERY]`
+Blocked devices | Input | Deny the application access to specific USB devices through the portal, even if they would otherwise be allowed.<br /> <br /> If a device exists in both the allowed and blocked list, the blocked list takes precedence and access is denied. | `--nousb=[QUERY]`
 
 ### Portals
 

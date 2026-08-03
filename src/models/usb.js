@@ -3,6 +3,7 @@
 /* usb.js
  *
  * Copyright 2025 Martin Abente Lahaye
+ * Copyright 2026 Malika Odeny Asman
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +36,14 @@ var FlatpakUsbModel = GObject.registerClass({
         return {
             usb: {
                 supported: this._info.supports('1.15.11'),
-                description: _('Devices'),
+                description: _('Allowed devices'),
+                option: null,
+                value: this.constructor.getDefault(),
+                example: _('e.g. vnd:0123+dev:4567'),
+            },
+            'usb-hidden': {
+                supported: this._info.supports('1.15.11'),
+                description: _('Blocked devices'),
                 option: null,
                 value: this.constructor.getDefault(),
                 example: _('e.g. vnd:0123+dev:4567'),
@@ -56,7 +64,7 @@ var FlatpakUsbModel = GObject.registerClass({
     }
 
     static getKey() {
-        return 'enumerable-devices';
+        return null;
     }
 
     static getStyle() {
@@ -68,51 +76,104 @@ var FlatpakUsbModel = GObject.registerClass({
     }
 
     static getDescription() {
-        return _('List of devices matching the query visible to the USB portal');
+        return _('List of USB devices accessible through the portal');
     }
 
     getOptions() { // eslint-disable-line class-methods-use-this
         return null;
     }
 
-    static isNegated(value) {
-        return value.startsWith('!');
+    reset() {
+        super.reset();
+        this._hiddenOriginals = new Set();
+        this._hiddenGlobals = new Set();
+        this._hiddenOverrides = new Set();
     }
 
-    static negate(value) {
-        if (this.isNegated(value))
-            return value.replace('!', '');
-        return `!${value}`;
+    _findProperHiddenSet(overrides, global) {
+        if (overrides && global)
+            return this._hiddenGlobals;
+        if (overrides && !global)
+            return this._hiddenOverrides;
+        return this._hiddenOriginals;
+    }
+
+    _getHiddenStatusForDevice(device) {
+        let status = FlatsealOverrideStatus.ORIGINAL;
+        if (this._hiddenGlobals.has(device))
+            status = FlatsealOverrideStatus.GLOBAL;
+        if (this._hiddenOverrides.has(device))
+            status = FlatsealOverrideStatus.USER;
+        return status;
     }
 
     updateFromProxyProperty(property, value) {
-        const values = new Set(this.constructor.deserialize(value));
+        const devices = new Set(this.constructor.deserialize(value)
+            .filter(d => d.length !== 0));
 
-        const baseline = this._originals.union(this._globals);
-        const added = values.difference(baseline);
-        const removed = new Set([...baseline.difference(values)]
-            .map(d => this.constructor.negate(d)));
-
-        this._overrides = added.union(removed);
+        if (property === 'usb') {
+            this._overrides = new Set([...devices]
+                .filter(d => !this._originals.has(d))
+                .filter(d => !this._globals.has(d)));
+        } else if (property === 'usb-hidden') {
+            this._hiddenOverrides = new Set([...devices]
+                .filter(d => !this._hiddenOriginals.has(d))
+                .filter(d => !this._hiddenGlobals.has(d)));
+        }
     }
 
     updateStatusProperty(proxy) {
-        const statuses = this.constructor.deserialize(proxy.usb)
+        const usbStatuses = this.constructor.deserialize(proxy.usb)
+            .filter(d => d.length !== 0)
             .map(d => this._getStatusForPermission(d));
+        proxy.set_property('usb-status', this.constructor.serialize(usbStatuses));
 
-        proxy.set_property('usb-status', this.constructor.serialize(statuses));
+        const hiddenStatuses = this.constructor.deserialize(proxy.usb_hidden)
+            .filter(d => d.length !== 0)
+            .map(d => this._getHiddenStatusForDevice(d));
+        proxy.set_property('usb-hidden-status', this.constructor.serialize(hiddenStatuses));
     }
 
     updateProxyProperty(proxy) {
-        const originals = [...this._originals]
-            .filter(o => !this._globals.has(this.constructor.negate(o)))
-            .filter(o => !this._overrides.has(this.constructor.negate(o)));
+        const allowed = new Set([...this._originals, ...this._globals, ...this._overrides]);
+        const blocked = new Set([...this._hiddenOriginals, ...this._hiddenGlobals, ...this._hiddenOverrides]);
 
-        const globals = [...this._globals]
-            .filter(g => !this._overrides.has(this.constructor.negate(g)));
+        proxy.set_property('usb', this.constructor.serialize([...allowed]));
+        proxy.set_property('usb-hidden', this.constructor.serialize([...blocked]));
+    }
 
-        const usb = [...originals, ...globals, ...this._overrides];
+    loadFromKeyFile(group, key, value, overrides, global) {
+        const devices = this.constructor.deserialize(value)
+            .filter(d => d.length !== 0);
 
-        proxy.set_property('usb', this.constructor.serialize(usb));
+        if (key === 'enumerable-devices') {
+            const set = this._findProperSet(overrides, global);
+            devices.forEach(d => set.add(d));
+        } else if (key === 'hidden-devices') {
+            const set = this._findProperHiddenSet(overrides, global);
+            devices.forEach(d => set.add(d));
+        }
+    }
+
+    saveToKeyFile(keyFile) {
+        const group = this.constructor.getGroup();
+
+        this._overrides.forEach(value => {
+            try {
+                const existing = keyFile.get_value(group, 'enumerable-devices');
+                keyFile.set_value(group, 'enumerable-devices', `${value};${existing}`);
+            } catch (err) {
+                keyFile.set_value(group, 'enumerable-devices', `${value}`);
+            }
+        });
+
+        this._hiddenOverrides.forEach(value => {
+            try {
+                const existing = keyFile.get_value(group, 'hidden-devices');
+                keyFile.set_value(group, 'hidden-devices', `${value};${existing}`);
+            } catch (err) {
+                keyFile.set_value(group, 'hidden-devices', `${value}`);
+            }
+        });
     }
 });
