@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>com.test.InvalidTimestamp</id>
+  <name>Invalid Timestamp</name>
+  <Author>Yooh</Author>
+  <summary>minimal test application</summary>
+  <releases>
+    <release version="0.0.1" timestamp="999999999999999"/>
+  </releases>
+</component>

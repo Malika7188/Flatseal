@@ -350,9 +350,9 @@ var FlatpakApplicationsModel = GObject.registerClass({
             appdata.version = `${release.get_version()}`;
 
         if (release.get_timestamp() !== null) {
-            const ts = release.get_timestamp();
-            const date = new Date(ts * 1000);
-            appdata.date = date.toISOString().substring(0, 10);
+            const date = GLib.DateTime.new_from_unix_utc(release.get_timestamp());
+            if (date !== null)
+                appdata.date = date.format('%Y-%m-%d');
         }
 
         return appdata;
