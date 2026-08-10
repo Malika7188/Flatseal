@@ -57,6 +57,7 @@ const _globalRestoredAppId = 'com.test.GlobalRestored';
 const _statusesAppId = 'com.test.Statuses';
 const _malformedAppId = 'com.test.Malformed';
 const _conditionalAppId = 'com.test.Conditional';
+const _invalidTimestampAppId = 'com.test.InvalidTimestamp';
 
 const _flatpakInfo = GLib.build_filenamev(['..', 'tests', 'content', '.flatpak-info']);
 const _flatpakInfoOld = GLib.build_filenamev(['..', 'tests', 'content', '.flatpak-info.old']);
@@ -171,6 +172,16 @@ describe('Model', function() {
 
         const appIds = applicationsDefault.getAll().map(a => a.appId);
         expect(appIds).not.toContain(_baseAppId);
+    });
+
+    it('does not crash on an out-of-range release timestamp', function() {
+        expect(() => applicationsDefault.getAppDataForAppId(_invalidTimestampAppId)).not.toThrow();
+
+        const appdata = applicationsDefault.getAppDataForAppId(_invalidTimestampAppId);
+        expect(appdata.date).toEqual(_('Unknown'));
+
+        const appIds = applicationsDefault.getAll().map(a => a.appId);
+        expect(appIds).toContain(_invalidTimestampAppId);
     });
 
     it('loads permissions', function() {

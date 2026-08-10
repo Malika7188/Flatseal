@@ -352,7 +352,8 @@ var FlatpakApplicationsModel = GObject.registerClass({
         if (release.get_timestamp() !== null) {
             const ts = release.get_timestamp();
             const date = new Date(ts * 1000);
-            appdata.date = date.toISOString().substring(0, 10);
+            if (!isNaN(date))
+                appdata.date = date.toISOString().substring(0, 10);
         }
 
         return appdata;
