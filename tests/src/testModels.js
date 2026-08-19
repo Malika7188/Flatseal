@@ -96,6 +96,7 @@ const _usbKey = 'enumerable-devices';
 const _usbHiddenKey = 'hidden-devices';
 
 const _flatpakConfig = GLib.build_filenamev(['..', 'tests', 'content']);
+const _customInstallationConfig = GLib.build_filenamev(['..', 'tests', 'content', 'brokenInstallations']);
 
 
 describe('Model', function() {
@@ -127,6 +128,7 @@ describe('Model', function() {
         GLib.setenv('FLATPAK_SYSTEM_DIR', _system, true);
         GLib.setenv('FLATPAK_USER_DIR', _none, true);
         GLib.setenv('FLATPAK_INFO_PATH', _flatpakInfo, true);
+        GLib.setenv('FLATPAK_CONFIG_DIR', _flatpakConfig, true);
 
         infoDefault.reload();
         portalsDefault.reload();
@@ -766,6 +768,15 @@ describe('Model', function() {
 
         expect(permissionsDefault.shared_network).toBe(false);
         expect(permissionsDefault.shared_ipc).toBe(true);
+    });
+
+    it('does not crash when a custom installation config is malformed', function() {
+        GLib.setenv('FLATPAK_CONFIG_DIR', _customInstallationConfig, true);
+
+        expect(() => applicationsDefault.reload()).not.toThrow();
+
+        const appIds = applicationsDefault.getAll().map(a => a.appId);
+        expect(appIds).toContain(_basicAppId);
     });
 
     it('add new environment variable', function(done) {
