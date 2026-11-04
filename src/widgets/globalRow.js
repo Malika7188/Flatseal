@@ -44,6 +44,10 @@ var FlatsealGlobalRow = GObject.registerClass({
             ? FlatsealOverrideStatus.USER : FlatsealOverrideStatus.ORIGINAL;
     }
 
+    get statusIcon() {
+        return this._statusIcon;
+    }
+
     get appId() {
         return this.get_subtitle();
     }

@@ -20,6 +20,12 @@ row .status.user {
 row .status.global {
     color: @insensitive_fg_color;
 }
+.navigation-sidebar row > box.header:dir(ltr) {
+    margin-right: 0px;
+}
+.navigation-sidebar row > box.header:dir(rtl) {
+    margin-left: 0px;
+}
 
 row .content .bus .info,
 row .content .variable .info,
